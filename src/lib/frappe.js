@@ -3,34 +3,79 @@ const JSON_HEADERS = {
   'Content-Type': 'application/json',
 }
 
+function stripTrailingJsonNoise(text) {
+  return String(text)
+    .replace(/(?:\\n|\r\n|\n)+\s*["\],\]]+\s*$/g, '')
+    .replace(/"\s*\]\s*$/g, '')
+    .trim()
+}
+
+/** Frappe serializes toast rows as JSON strings like '{"message":"...","title":"Error"}'. */
+function coerceServerMessageEntry(entry) {
+  if (entry == null) return ''
+  if (typeof entry === 'object' && typeof entry.message === 'string') {
+    return stripTrailingJsonNoise(entry.message)
+  }
+  if (typeof entry !== 'string') return ''
+  const trimmed = entry.trim()
+  if (trimmed.startsWith('{') && trimmed.includes('message')) {
+    try {
+      const obj = JSON.parse(entry)
+      if (obj && typeof obj.message === 'string') return stripTrailingJsonNoise(obj.message)
+    } catch {
+      // fall through
+    }
+  }
+  return stripTrailingJsonNoise(entry)
+}
+
+function extractServerMessages(payload) {
+  if (!payload?._server_messages) return []
+  try {
+    const messages = JSON.parse(payload._server_messages)
+    if (!Array.isArray(messages)) return []
+    return messages.map(coerceServerMessageEntry).filter(Boolean)
+  } catch {
+    return []
+  }
+}
+
 function normalizeFrappeError(payload) {
   if (!payload) return new Error('Request failed')
 
   if (typeof payload === 'string') return new Error(cleanErrorText(payload))
 
-  if (payload.exc && typeof payload.exc === 'string') return new Error(cleanErrorText(payload.exc))
-
-  if (payload._server_messages) {
-    try {
-      const messages = JSON.parse(payload._server_messages)
-      if (Array.isArray(messages) && messages.length) {
-        const last = messages[messages.length - 1]
-        if (typeof last === 'string') return new Error(cleanErrorText(last))
-        if (last?.message) return new Error(cleanErrorText(last.message))
-      }
-    } catch {
-      // ignore
-    }
+  const serverTexts = extractServerMessages(payload)
+  if (serverTexts.length) {
+    return new Error(cleanErrorText(serverTexts[serverTexts.length - 1]))
   }
 
-  if (payload.message && typeof payload.message === 'string') return new Error(cleanErrorText(payload.message))
+  if (payload.exc && typeof payload.exc === 'string') return new Error(cleanErrorText(payload.exc))
+
+  if (payload.message) {
+    if (typeof payload.message === 'string') return new Error(cleanErrorText(payload.message))
+    if (Array.isArray(payload.message)) {
+      const parts = payload.message
+        .map((m) => (typeof m === 'string' ? m : m?.message))
+        .filter((x) => typeof x === 'string' && x.trim())
+      if (parts.length) return new Error(cleanErrorText(parts.join('\n')))
+    }
+  }
 
   return new Error('Request failed')
 }
 
 function cleanErrorText(raw) {
   if (!raw) return 'Request failed'
-  const text = String(raw)
+  let text = String(raw).trim()
+
+  const jsonMsg = coerceServerMessageEntry(text)
+  if (jsonMsg && jsonMsg !== text && (!text.startsWith('Traceback') || jsonMsg.length < text.length)) {
+    text = jsonMsg
+  }
+
+  text = stripTrailingJsonNoise(text)
+  text = text.replace(/\\n/g, '\n').trim()
 
   // Remove HTML wrapper if any
   const withoutTags = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()

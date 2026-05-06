@@ -53,7 +53,9 @@ export default function TaskDetailModal({
 
         {taskModalLoading ? <div className="p-4 text-sm text-slate-500">Loading task details…</div> : null}
         {taskModalError ? (
-          <div className="mb-3 rounded-xl border border-red-300 bg-red-50 px-3 py-2.5 text-sm text-red-700">{taskModalError}</div>
+          <div className="mb-3 whitespace-pre-wrap break-words rounded-xl border border-red-300 bg-red-50 px-3 py-2.5 text-sm leading-snug text-red-700">
+            {taskModalError}
+          </div>
         ) : null}
 
         {!taskModalLoading && taskDetails ? (

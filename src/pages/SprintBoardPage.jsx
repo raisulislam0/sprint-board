@@ -485,7 +485,7 @@ export default function SprintBoardPage() {
   }
 
   return (
-    <div className="p-4 md:p-5">
+    <div className="flex min-h-svh min-w-0 flex-col gap-2 p-4 md:gap-3 md:p-5">
       <SprintBoardHeader
         loading={loading}
         onRefresh={() =>
@@ -512,9 +512,13 @@ export default function SprintBoardPage() {
         onClear={handleClearFilters}
       />
 
-      {error ? <div className="mb-3 rounded-xl border border-red-300 bg-red-50 px-3 py-2.5 text-sm text-red-700">{error}</div> : null}
+      {error ? (
+        <div className="mb-3 whitespace-pre-wrap break-words rounded-xl border border-red-300 bg-red-50 px-3 py-2.5 text-sm leading-snug text-red-700">
+          {error}
+        </div>
+      ) : null}
 
-      <Card className="max-h-[calc(100svh-170px)] overflow-auto p-3 md:p-4">
+      <Card className="min-h-0 flex-1 overflow-auto p-3 md:p-4">
         {loading ? (
           <div className="p-4 text-sm text-slate-500">Loading board…</div>
         ) : (
