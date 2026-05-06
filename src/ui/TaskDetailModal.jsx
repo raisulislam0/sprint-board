@@ -123,23 +123,56 @@ export default function TaskDetailModal({
               <p className="mb-2 text-xs leading-relaxed text-slate-500">
                 Search sprint members and tap a row to add. Remove someone from the chips below.
               </p>
-              <div className="relative" ref={sharedFieldRef}>
-                <span className="pointer-events-none absolute left-3 top-1/2 z-[1] -translate-y-1/2 text-slate-400">
-                  <IconSearch className="h-4 w-4" />
-                </span>
-                <input
-                  id="shared-employee-search"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/90 py-2.5 pl-10 pr-3 text-sm text-slate-900 shadow-inner outline-none transition-[border,box-shadow,background-color] placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
-                  placeholder="Filter by name or ID…"
-                  value={sharedEmployeeQuery}
-                  aria-controls="shared-employee-listbox"
-                  aria-autocomplete="list"
-                  onFocus={() => setSharedDropdownOpen(true)}
-                  onChange={(e) => {
-                    setSharedEmployeeQuery(e.target.value)
-                    setSharedDropdownOpen(true)
-                  }}
-                />
+              <div ref={sharedFieldRef}>
+                <div className="relative">
+                  <div className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/90 py-2.5 pl-3 pr-3 text-sm shadow-inner outline-none transition-[border,box-shadow,background-color] focus-within:border-blue-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500/20">
+                    <span className="pointer-events-none shrink-0 text-slate-400" aria-hidden>
+                      <IconSearch className="h-4 w-4" />
+                    </span>
+                    <input
+                      id="shared-employee-search"
+                      className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-0"
+                      placeholder="Filter by name or ID…"
+                      value={sharedEmployeeQuery}
+                      aria-controls="shared-employee-listbox"
+                      aria-autocomplete="list"
+                      onFocus={() => setSharedDropdownOpen(true)}
+                      onChange={(e) => {
+                        setSharedEmployeeQuery(e.target.value)
+                        setSharedDropdownOpen(true)
+                      }}
+                    />
+                  </div>
+                  {sharedDropdownOpen && filteredSharedOptions.length > 0 ? (
+                    <div
+                      id="shared-employee-listbox"
+                      role="listbox"
+                      className="absolute left-0 right-0 top-[calc(100%+6px)] z-20 max-h-[220px] overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl shadow-slate-300/30 ring-1 ring-slate-200/80"
+                    >
+                      {filteredSharedOptions.slice(0, 12).map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          role="option"
+                          className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-900 hover:bg-blue-50"
+                          onClick={() => {
+                            toggleSharedEmployee(opt.value)
+                            setSharedEmployeeQuery('')
+                            setSharedDropdownOpen(true)
+                          }}
+                        >
+                          <span className="font-medium">{opt.label}</span>
+                          <span className="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600">{opt.value}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  {sharedDropdownOpen && sharedEmployeeOptions.length > 0 && filteredSharedOptions.length === 0 && sharedEmployeeQuery.trim() ? (
+                    <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-20 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-sm text-slate-500">
+                      No employees match “{sharedEmployeeQuery.trim()}”. Try another spelling.
+                    </div>
+                  ) : null}
+                </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
                   {sharedEmployeeOptions.length > 0 ? (
                     <span>
@@ -150,35 +183,6 @@ export default function TaskDetailModal({
                     <span>No employees loaded for this sprint</span>
                   )}
                 </div>
-                {sharedDropdownOpen && filteredSharedOptions.length > 0 ? (
-                  <div
-                    id="shared-employee-listbox"
-                    role="listbox"
-                    className="absolute left-0 right-0 top-[calc(100%+6px)] z-20 max-h-[220px] overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl shadow-slate-300/30 ring-1 ring-slate-200/80"
-                  >
-                    {filteredSharedOptions.slice(0, 12).map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        role="option"
-                        className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-900 hover:bg-blue-50"
-                        onClick={() => {
-                          toggleSharedEmployee(opt.value)
-                          setSharedEmployeeQuery('')
-                          setSharedDropdownOpen(true)
-                        }}
-                      >
-                        <span className="font-medium">{opt.label}</span>
-                        <span className="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600">{opt.value}</span>
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-                {sharedDropdownOpen && sharedEmployeeOptions.length > 0 && filteredSharedOptions.length === 0 && sharedEmployeeQuery.trim() ? (
-                  <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-20 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-sm text-slate-500">
-                    No employees match “{sharedEmployeeQuery.trim()}”. Try another spelling.
-                  </div>
-                ) : null}
               </div>
               <div className="mb-2 mt-3 flex flex-wrap gap-1.5">
                 {taskForm.shared_employees.length ? (

@@ -73,16 +73,27 @@ export default function BoardFilters({
           />
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-          {filtersPending ? (
-            <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-900 ring-1 ring-amber-200/80">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-500" />
-              </span>
-              Pause {FILTER_DEBOUNCE_MS}ms
+        <div className="flex min-h-[1.625rem] min-w-[7rem] shrink-0 flex-wrap items-center justify-end gap-2 sm:min-w-[7.75rem]">
+          <span
+            className={
+              filtersPending
+                ? 'inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-900 ring-1 ring-amber-200/80'
+                : 'pointer-events-none inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium opacity-0'
+            }
+            {...(filtersPending ? {} : { 'aria-hidden': true })}
+          >
+            <span className="relative flex h-1.5 w-1.5">
+              {filtersPending ? (
+                <>
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-500" />
+                </>
+              ) : (
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-transparent" />
+              )}
             </span>
-          ) : null}
+            Pause {FILTER_DEBOUNCE_MS}ms
+          </span>
           <button
             type="button"
             className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-slate-700 shadow-sm transition-[background,box-shadow] hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"

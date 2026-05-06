@@ -60,6 +60,8 @@ export default function SprintBoardPage() {
   })
   const syncInFlightRef = useRef(false)
   const pauseSyncUntilRef = useRef(0)
+  const openSprintBootstrapScheduledRef = useRef(false)
+  const openSprintRequestGenRef = useRef(0)
   const filterRef = useRef({
     sprintPlan: '',
     employeeId: '',
@@ -149,15 +151,22 @@ export default function SprintBoardPage() {
   }, [user, isSystemManager])
 
   const loadOpenSprintPlan = useCallback(async () => {
+    const gen = openSprintRequestGenRef.current
     try {
       const open = await frappeCall({
         method: 'fusion_infotech.fusion_infotech.api.sprint_board.get_open_sprint_plan',
         args: {},
       })
-      if (open) setSprintPlan(open)
+      if (gen !== openSprintRequestGenRef.current) return
+      if (open) setSprintPlan((prev) => (prev === '' ? open : prev))
     } catch {
       // ignore (board can still load without sprint_plan)
     }
+  }, [])
+
+  const onSprintPlanFieldChange = useCallback((next) => {
+    openSprintRequestGenRef.current += 1
+    setSprintPlan(next)
   }, [])
 
   async function bootstrap() {
@@ -194,7 +203,10 @@ export default function SprintBoardPage() {
 
   useEffect(() => {
     if (!user) return
-    if (!sprintPlan) loadOpenSprintPlan()
+    if (sprintPlan) return
+    if (openSprintBootstrapScheduledRef.current) return
+    openSprintBootstrapScheduledRef.current = true
+    void loadOpenSprintPlan()
   }, [user, sprintPlan, loadOpenSprintPlan])
 
   useEffect(() => {
@@ -478,6 +490,7 @@ export default function SprintBoardPage() {
   })
 
   function handleClearFilters() {
+    openSprintRequestGenRef.current += 1
     setSprintPlan('')
     setEmployeeId('')
     setProject('')
@@ -500,7 +513,7 @@ export default function SprintBoardPage() {
 
       <BoardFilters
         sprintPlan={sprintPlan}
-        onSprintPlanChange={setSprintPlan}
+        onSprintPlanChange={onSprintPlanFieldChange}
         employeeId={employeeId}
         currentUserEmployeeId={currentUserEmployeeId}
         isSystemManager={isSystemManager}
