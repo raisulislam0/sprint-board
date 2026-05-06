@@ -10,6 +10,17 @@ function stripTrailingJsonNoise(text) {
     .trim()
 }
 
+/** Frappe grid / child-table validation prefixes like "Row 8:" or "Row *:" */
+function stripLeadingRowLabels(text) {
+  if (!text) return ''
+  return String(text)
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^Row\s*(?:\*|\d+)\s*:\s*/i, '').trim())
+    .filter((line) => line.length > 0)
+    .join('\n')
+    .trim()
+}
+
 /** Frappe serializes toast rows as JSON strings like '{"message":"...","title":"Error"}'. */
 function coerceServerMessageEntry(entry) {
   if (entry == null) return ''
@@ -82,11 +93,11 @@ function cleanErrorText(raw) {
 
   // Most useful line in tracebacks often starts with "ValidationError:"
   const validationMatch = withoutTags.match(/ValidationError:\s*(.+)$/i)
-  if (validationMatch?.[1]) return validationMatch[1].trim()
+  if (validationMatch?.[1]) return stripLeadingRowLabels(validationMatch[1].trim()) || 'Request failed'
 
   // Generic Frappe exception suffix: "frappe.exceptions.X: message"
   const frappeExceptionMatch = withoutTags.match(/frappe\.exceptions\.[A-Za-z_]+:\s*(.+)$/)
-  if (frappeExceptionMatch?.[1]) return frappeExceptionMatch[1].trim()
+  if (frappeExceptionMatch?.[1]) return stripLeadingRowLabels(frappeExceptionMatch[1].trim()) || 'Request failed'
 
   // If traceback string, use last non-empty line
   if (text.includes('Traceback')) {
@@ -97,12 +108,14 @@ function cleanErrorText(raw) {
     const last = lines[lines.length - 1]
     if (last) {
       const idx = last.indexOf(':')
-      if (idx > -1 && idx < last.length - 1) return last.slice(idx + 1).trim()
-      return last
+      if (idx > -1 && idx < last.length - 1) {
+        return stripLeadingRowLabels(last.slice(idx + 1).trim()) || 'Request failed'
+      }
+      return stripLeadingRowLabels(last) || 'Request failed'
     }
   }
 
-  return withoutTags || text.trim() || 'Request failed'
+  return stripLeadingRowLabels(withoutTags || text.trim()) || 'Request failed'
 }
 
 let cachedCsrfToken = null
